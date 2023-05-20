@@ -7,6 +7,7 @@
 
 #define MAX_BUFFER_LENGTH 2048
 
+#if defined(LIBRIME_PLUGINS)
 extern void rime_require_module_lua();
 extern void rime_require_module_charcode();
 extern void rime_require_module_octagram();
@@ -16,6 +17,7 @@ static void declare_librime_module_dependencies() {
   rime_require_module_charcode();
   rime_require_module_octagram();
 }
+#endif
 
 class Rime {
  public:
@@ -134,7 +136,9 @@ GlobalRefSingleton *GlobalRef;
 
 JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *jvm, void *reserved) {
   GlobalRef = new GlobalRefSingleton(jvm);
+#if defined(LIBRIME_PLUGINS)
   declare_librime_module_dependencies();
+#endif
   return JNI_VERSION_1_6;
 }
 

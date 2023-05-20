@@ -5,51 +5,9 @@ project(trime-lib VERSION 3.0.0)
 set(ANDROID_STL c++_shared)
 set(CMAKE_CXX_STANDARD 14)
 
-set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
-
 # general options
-option(BUILD_SHARED_LIBS "" OFF)
-option(BUILD_TESTING "" OFF)
-
-# iconv for Boost::locale
-include(Iconv)
-# workaround for boost install
-install(TARGETS iconv EXPORT boost_locale-targets)
-
-add_subdirectory(boost)
-
-option(WITH_GFLAGS "Use gflags" OFF)
-option(WITH_GTEST "Use googletest" OFF)
-option(WITH_UNWIND "Enable libunwind support" OFF)
-add_subdirectory(librime/deps/glog)
-
-option(YAML_CPP_BUILD_TOOLS "" OFF)
-option(YAML_CPP_BUILD_TESTS "" OFF)
-option(YAML_CPP_INSTALL "" OFF)
-add_subdirectory(librime/deps/yaml-cpp)
-
-# enable compress for leveldb
-option(SNAPPY_BUILD_TESTS "" OFF)
-option(SNAPPY_BUILD_BENCHMARKS "" OFF)
-option(SNAPPY_INSTALL "" OFF)
-add_subdirectory(snappy)
-
-set(HAVE_SNAPPY TRUE)
-option(LEVELDB_BUILD_TESTS "" OFF)
-option(LEVELDB_BUILD_BENCHMARKS "" OFF)
-option(LEVELDB_INSTALL "" OFF)
-add_subdirectory(librime/deps/leveldb)
-
-add_subdirectory(OpenCC)
-include(OpenccWorkarounds)
-
-include(RimePlugins)
-
-option(BUILD_TEST "" OFF)
 include_directories(
     PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/librime/include"
-    PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/librime/deps/glog"
-    PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/librime/deps/glog/src"
 )
 # workaround for librime/tools/rime_api_console.cc
 # TODO: fix it in upstream
@@ -57,6 +15,25 @@ string(REPLACE "-Werror=format-security" "" CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS})
 string(REPLACE "-Wformat" "" CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS})
 add_definitions("-Wno-format")
 # workaround end
-add_subdirectory(librime)
 
-add_subdirectory(librime_jni)
+file(GLOB RIME_JNI_SOURCES librime_jni/*.cc)
+add_library(rime_jni SHARED ${RIME_JNI_SOURCES})
+target_include_directories(rime_jni PRIVATE
+        "${CMAKE_CURRENT_SOURCE_DIR}/include/librime"
+        )
+target_link_libraries(rime_jni
+        ${CMAKE_CURRENT_LIST_DIR}/libs/${CMAKE_ANDROID_ARCH_ABI}/librime.so
+        ${CMAKE_CURRENT_LIST_DIR}/libs/${CMAKE_ANDROID_ARCH_ABI}/libopencc.a
+        )
+
+string(TIMESTAMP TODAY "%Y%m%d")
+set(TRIME_VERSION "${TRIME_VERSION}-${TODAY}")
+
+set(LIBRIME_VERSION "${LIBRIME_VERSION}-${ANDROID_ABI}")
+
+target_compile_definitions(rime_jni PRIVATE
+        CLASSNAME="com/osfans/trime/core/Rime"
+        TRIME_VERSION="${TRIME_VERSION}"
+        OPENCC_VERSION="${OPENCC_VERSION}"
+        LIBRIME_VERSION="${LIBRIME_VERSION}"
+        )
