@@ -117,11 +117,7 @@ android {
     // Steps to generate the prebuilt directory:
     // $ ./gradlew app:assembleRelease
     // $ cp --recursive app/build/intermediates/stripped_native_libs/universalRelease/out/lib app/prebuilt
-    if (file("prebuilt").exists()) {
-        sourceSets.getByName("main").jniLibs.srcDirs(setOf("prebuilt"))
-    } else {
-        externalNativeBuild.cmake.path("src/main/jni/CMakeLists.txt")
-    }
+    sourceSets.getByName("main").jniLibs.srcDirs(setOf("jniLibs"))
 
     buildFeatures {
         viewBinding = true
@@ -131,7 +127,7 @@ android {
         sourceCompatibility = JavaVersion.VERSION_1_8
         targetCompatibility = JavaVersion.VERSION_1_8
     }
-    
+
     kotlinOptions {
         jvmTarget = "1.8"
     }
