@@ -65,7 +65,6 @@ fun buildInfo(): String {
 android {
     namespace = "com.osfans.trime"
     compileSdk = 33
-    ndkVersion = "24.0.8215888"
 
     defaultConfig {
         applicationId  = "com.osfans.trime"
@@ -135,12 +134,6 @@ android {
     // hack workaround lint gradle 8.0.2
     lint {
         checkReleaseBuilds = false
-    }
-
-    externalNativeBuild {
-        cmake {
-            version = "3.22.1"
-        }
     }
 
     splits {
