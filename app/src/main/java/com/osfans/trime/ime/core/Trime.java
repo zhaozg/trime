@@ -612,7 +612,8 @@ public class Trime extends LifecycleInputMethodService {
   public void onConfigurationChanged(@NonNull Configuration newConfig) {
     final Configuration config = getResources().getConfiguration();
     if (config != null) {
-      if (config.orientation != newConfig.orientation) {
+      //FIXME: check why config.orientation != newConfig.orientation always be false
+      if (true || config.orientation != newConfig.orientation) {
         // Clear composing text and candidates for orientation change.
         performEscape();
         config.orientation = newConfig.orientation;
