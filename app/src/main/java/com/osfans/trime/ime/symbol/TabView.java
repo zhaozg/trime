@@ -54,6 +54,7 @@ public class TabView extends View {
   private int candidateViewHeight, commentHeight, candidateSpacing, candidatePadding;
   private boolean isCommentOnTop;
   private boolean shouldCandidateUseCursor;
+
   // private final Rect[] tabGeometries = new Rect[MAX_CANDIDATE_COUNT + 2];
 
   public void reset() {
@@ -95,6 +96,14 @@ public class TabView extends View {
     reset();
 
     setWillNotDraw(false);
+  }
+
+  @Override
+  protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+    int h = isCommentOnTop ? candidateViewHeight + commentHeight : candidateViewHeight;
+    setMeasuredDimension(
+        MeasureSpec.makeMeasureSpec(widthMeasureSpec, MeasureSpec.UNSPECIFIED),
+        MeasureSpec.makeMeasureSpec(h, MeasureSpec.AT_MOST));
   }
 
   private boolean isHighlighted(int i) {
@@ -148,7 +157,7 @@ public class TabView extends View {
 
   public void updateTabWidth() {
     tabTags = TabManager.get().getTabCandidates();
-    highlightIndex = TabManager.get().getSelected();
+    highlightIndex = TabManager.get().getSelectedOrZero();
 
     int x = 0;
     for (TabTag computedTab : tabTags) {

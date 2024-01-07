@@ -38,11 +38,21 @@ object ClipboardHelper :
     private val onUpdateListeners = WeakHashSet<OnClipboardUpdateListener>()
 
     fun addOnUpdateListener(listener: OnClipboardUpdateListener) {
-        onUpdateListeners.add(listener)
+        Timber.d("Add OnUpdateListener: $listener")
+        val result = onUpdateListeners.add(listener)
+        Timber.d(
+            "onUpdateListeners.add: result = $result," +
+                "onUpdateListeners.size = ${onUpdateListeners.size}",
+        )
     }
 
     fun removeOnUpdateListener(listener: OnClipboardUpdateListener) {
-        onUpdateListeners.remove(listener)
+        Timber.d("Remove OnUpdateListener: $listener")
+        val result = onUpdateListeners.remove(listener)
+        Timber.d(
+            "onUpdateListeners.remove: result = $result," +
+                "onUpdateListeners.size = ${onUpdateListeners.size}",
+        )
     }
 
     private val limit get() = AppPrefs.defaultInstance().clipboard.clipboardLimit
@@ -53,24 +63,28 @@ object ClipboardHelper :
 
     fun init(context: Context) {
         clipboardManager.addPrimaryClipChangedListener(this)
-        clbDb = Room
-            .databaseBuilder(context, Database::class.java, "clipboard.db")
-            .addMigrations(Database.MIGRATION_3_4)
-            .build()
+        clbDb =
+            Room
+                .databaseBuilder(context, Database::class.java, "clipboard.db")
+                .addMigrations(Database.MIGRATION_3_4)
+                .build()
         clbDao = clbDb.databaseDao()
         launch { updateItemCount() }
     }
 
     suspend fun get(id: Int) = clbDao.get(id)
+
     suspend fun getAll() = clbDao.getAll()
 
     suspend fun pin(id: Int) = clbDao.updatePinned(id, true)
+
     suspend fun unpin(id: Int) = clbDao.updatePinned(id, false)
 
     suspend fun delete(id: Int) {
         clbDao.delete(id)
         updateItemCount()
     }
+
     suspend fun deleteAll(skipUnpinned: Boolean = true) {
         if (skipUnpinned) {
             clbDao.deleteAllUnpinned()
@@ -126,17 +140,23 @@ object ClipboardHelper :
     private suspend fun removeOutdated() {
         val all = clbDao.getAll()
         if (all.size > limit) {
-            val outdated = all
-                .map {
-                    if (it.pinned) {
-                        it.copy(id = Int.MAX_VALUE)
-                    } else {
-                        it
+            val outdated =
+                all
+                    .map {
+                        if (it.pinned) {
+                            it.copy(id = Int.MAX_VALUE)
+                        } else {
+                            it
+                        }
                     }
-                }
-                .sortedBy { it.id }
-                .subList(0, all.size - limit)
+                    .sortedBy { it.id }
+                    .subList(0, all.size - limit)
             clbDao.delete(outdated)
         }
     }
+
+    suspend fun updateText(
+        id: Int,
+        text: String,
+    ) = clbDao.updateText(id, text)
 }

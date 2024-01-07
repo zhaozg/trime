@@ -3,32 +3,47 @@ package com.osfans.trime.data.sound
 import com.charleskorn.kaml.Yaml
 import com.charleskorn.kaml.YamlConfiguration
 import com.osfans.trime.data.AppPrefs
+import com.osfans.trime.data.DataDirectoryChangeListener
 import com.osfans.trime.data.DataManager
 import timber.log.Timber
 import java.io.File
 
-object SoundThemeManager {
+object SoundThemeManager : DataDirectoryChangeListener.Listener {
+    var userDir = File(DataManager.userDataDir, "sound")
 
-    val userDir = File(DataManager.userDataDir, "sound")
+    init {
+        // register listener
+        DataDirectoryChangeListener.addDirectoryChangeListener(this)
+    }
 
-    private val yaml = Yaml(
-        configuration = YamlConfiguration(
-            strictMode = false,
-        ),
-    )
+    /**
+     * Update userDir.
+     */
+    override fun onDataDirectoryChange() {
+        userDir = File(DataManager.userDataDir, "sound")
+    }
+
+    private val yaml =
+        Yaml(
+            configuration =
+                YamlConfiguration(
+                    strictMode = false,
+                ),
+        )
 
     private fun listSounds(): MutableList<SoundTheme> {
         val files = userDir.listFiles { f -> f.name.endsWith("sound.yaml") }
         return files
             ?.mapNotNull decode@{ f ->
-                val theme = runCatching {
-                    yaml.decodeFromString(SoundTheme.serializer(), f.readText()).also {
-                        it.name = f.name.substringBefore('.')
+                val theme =
+                    runCatching {
+                        yaml.decodeFromString(SoundTheme.serializer(), f.readText()).also {
+                            it.name = f.name.substringBefore('.')
+                        }
+                    }.getOrElse { e ->
+                        Timber.w("Failed to decode sound theme file ${f.absolutePath}: ${e.message}")
+                        return@decode null
                     }
-                }.getOrElse { e ->
-                    Timber.w("Failed to decode sound theme file ${f.absolutePath}: ${e.message}")
-                    return@decode null
-                }
                 return@decode theme
             }
             ?.toMutableList() ?: mutableListOf()
@@ -58,7 +73,8 @@ object SoundThemeManager {
 
     fun getActiveSoundTheme() = runCatching { currentSoundTheme }
 
-    fun getActiveSoundFilePaths() = runCatching {
-        currentSoundTheme.let { t -> t.sound.map { "${userDir.path}/${t.folder}/$it" } }
-    }
+    fun getActiveSoundFilePaths() =
+        runCatching {
+            currentSoundTheme.let { t -> t.sound.map { "${userDir.path}/${t.folder}/$it" } }
+        }
 }

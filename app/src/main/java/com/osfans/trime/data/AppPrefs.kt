@@ -9,6 +9,7 @@ import com.osfans.trime.ime.enums.InlineModeType
 import com.osfans.trime.ime.landscapeinput.LandscapeInputUIMode
 import com.osfans.trime.util.appContext
 import java.lang.ref.WeakReference
+import java.util.Calendar
 
 /**
  * Helper class for an organized access to the shared preferences.
@@ -30,13 +31,19 @@ class AppPrefs(
      * The type is automatically derived from the given [default] value.
      * @return The value for [key] or [default].
      */
-    private inline fun <reified T> getPref(key: String, default: T): T {
+    private inline fun <reified T> getPref(
+        key: String,
+        default: T,
+    ): T {
         return when {
             false is T -> {
                 shared.getBoolean(key, default as Boolean) as T
             }
             0 is T -> {
                 shared.getInt(key, default as Int) as T
+            }
+            0L is T -> {
+                shared.getLong(key, default as Long) as T
             }
             "" is T -> {
                 (shared.getString(key, default as String) ?: (default as String)) as T
@@ -49,13 +56,19 @@ class AppPrefs(
      * Sets the [value] for [key] in the shared preferences, puts the value into the corresponding
      * cache and returns it.
      */
-    private inline fun <reified T> setPref(key: String, value: T) {
+    private inline fun <reified T> setPref(
+        key: String,
+        value: T,
+    ) {
         when {
             false is T -> {
                 shared.edit().putBoolean(key, value as Boolean).apply()
             }
             0 is T -> {
                 shared.edit().putInt(key, value as Int).apply()
+            }
+            0L is T -> {
+                shared.edit().putLong(key, value as Long).apply()
             }
             "" is T -> {
                 shared.edit().putString(key, value as String).apply()
@@ -107,6 +120,7 @@ class AppPrefs(
             const val PID = "general__pid"
             const val LAST_BUILD_GIT_HASH = "general__last_build_git_hash"
         }
+
         var lastVersionName: String
             get() = prefs.getPref(LAST_VERSION_NAME, "")
             set(v) = prefs.setPref(LAST_VERSION_NAME, v)
@@ -166,6 +180,7 @@ class AppPrefs(
             const val DELETE_CANDIDATE_TIMEOUT = "keyboard__key_delete_candidate_timeout"
             const val SHOULD_LONG_CLICK_DELETE_CANDIDATE = "keyboard__long_click_delete_candidate"
         }
+
         var inlinePreedit: InlineModeType
             get() = InlineModeType.fromString(prefs.getPref(INLINE_PREEDIT_MODE, "preview"))
             set(v) = prefs.setPref(INLINE_PREEDIT_MODE, v)
@@ -291,6 +306,7 @@ class AppPrefs(
             const val AUTO_DARK = "theme_auto_dark"
             const val USE_MINI_KEYBOARD = "theme_use_mini_keyboard"
         }
+
         var selectedTheme: String
             get() = prefs.getPref(SELECTED_THEME, "trime")
             set(v) = prefs.setPref(SELECTED_THEME, v)
@@ -313,19 +329,29 @@ class AppPrefs(
             const val SHARED_DATA_DIR = "profile_shared_data_dir"
             const val USER_DATA_DIR = "profile_user_data_dir"
             const val SYNC_BACKGROUND_ENABLED = "profile_sync_in_background"
+            const val TIMING_SYNC_ENABLED = "profile_timing_sync"
+            const val TIMING_SYNC_TRIGGER_TIME = "profile_timing_sync_trigger_time"
             const val LAST_SYNC_STATUS = "profile_last_sync_status"
             const val LAST_BACKGROUND_SYNC = "profile_last_background_sync"
-            val EXTERNAL_PATH_PREFIX: String = PathUtils.getExternalStoragePath()
+
+            private fun getExternalPathPrefix() = PathUtils.getExternalStoragePath()
         }
+
         var sharedDataDir: String
-            get() = prefs.getPref(SHARED_DATA_DIR, "$EXTERNAL_PATH_PREFIX/rime")
+            get() = prefs.getPref(SHARED_DATA_DIR, "${getExternalPathPrefix()}/rime")
             set(v) = prefs.setPref(SHARED_DATA_DIR, v)
         var userDataDir: String
-            get() = prefs.getPref(USER_DATA_DIR, "$EXTERNAL_PATH_PREFIX/rime")
+            get() = prefs.getPref(USER_DATA_DIR, "${getExternalPathPrefix()}/rime")
             set(v) = prefs.setPref(USER_DATA_DIR, v)
         var syncBackgroundEnabled: Boolean
             get() = prefs.getPref(SYNC_BACKGROUND_ENABLED, false)
             set(v) = prefs.setPref(SYNC_BACKGROUND_ENABLED, v)
+        var timingSyncEnabled: Boolean
+            get() = prefs.getPref(TIMING_SYNC_ENABLED, false)
+            set(v) = prefs.setPref(TIMING_SYNC_ENABLED, v)
+        var timingSyncTriggerTime: Long
+            get() = prefs.getPref(TIMING_SYNC_TRIGGER_TIME, Calendar.getInstance().timeInMillis + 1200000L)
+            set(v) = prefs.setPref(TIMING_SYNC_TRIGGER_TIME, v)
         var lastSyncStatus: Boolean
             get() = prefs.getPref(LAST_SYNC_STATUS, false)
             set(v) = prefs.setPref(LAST_SYNC_STATUS, v)
@@ -343,6 +369,7 @@ class AppPrefs(
             const val DRAFT_LIMIT = "clipboard_draft_limit"
             const val CLIPBOARD_LIMIT = "clipboard_clipboard_limit"
         }
+
         var clipboardCompareRules: List<String>
             get() = prefs.getPref(CLIPBOARD_COMPARE_RULES, "").trim().split('\n')
             set(v) = prefs.setPref(CLIPBOARD_COMPARE_RULES, v.joinToString("\n"))
@@ -373,6 +400,7 @@ class AppPrefs(
             const val SHOW_STATUS_BAR_ICON = "other__show_status_bar_icon"
             const val DESTROY_ON_QUIT = "other__destroy_on_quit"
         }
+
         var uiMode: String
             get() = prefs.getPref(UI_MODE, "auto")
             set(v) = prefs.setPref(UI_MODE, v)
